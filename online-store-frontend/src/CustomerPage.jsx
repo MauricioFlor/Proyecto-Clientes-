@@ -5,6 +5,7 @@ function CustomerPage() {
   const [customers, setCustomers] = useState([])
   const [types, setTypes] = useState([])
   const [form, setForm] = useState({ name: '', email: '', customerTypeId: '' })
+  const [editingId, setEditingId] = useState(null)
 
   useEffect(() => {
     api.get('/customers').then(res => setCustomers(res.data))
@@ -14,11 +15,17 @@ function CustomerPage() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     try {
-      const res = await api.post('/customers', form)
-      setCustomers([...customers, res.data])
+      if (editingId) {
+        const res = await api.put(`/customers/${editingId}`, form)
+        setCustomers(customers.map(c => c.id === editingId ? res.data : c))
+        setEditingId(null)
+      } else {
+        const res = await api.post('/customers', form)
+        setCustomers([...customers, res.data])
+      }
       setForm({ name: '', email: '', customerTypeId: '' })
     } catch (error) {
-      console.error('Error al agregar cliente:', error)
+      console.error('Error al guardar cliente:', error)
     }
   }
 
@@ -26,9 +33,22 @@ function CustomerPage() {
     try {
       await api.delete(`/customers/${id}`)
       setCustomers(customers.filter(c => c.id !== id))
+      if (editingId === id) {
+        setEditingId(null)
+        setForm({ name: '', email: '', customerTypeId: '' })
+      }
     } catch (error) {
       console.error('Error al eliminar cliente:', error)
     }
+  }
+
+  const startEdit = (customer) => {
+    setForm({
+      name: customer.name,
+      email: customer.email,
+      customerTypeId: customer.customerTypeId
+    })
+    setEditingId(customer.id)
   }
 
   return (
@@ -38,12 +58,15 @@ function CustomerPage() {
         {customers.map(c => (
           <li key={c.id} className="list-group-item d-flex justify-content-between align-items-center">
             {c.name} ({c.email}) - Tipo: {types.find(t => t.id === c.customerTypeId)?.customerTypeName}
-            <button className="btn btn-danger btn-sm" onClick={() => deleteCustomer(c.id)}>Eliminar</button>
+            <div className="btn-group">
+              <button className="btn btn-success btn-sm" onClick={() => startEdit(c)}>Editar</button>
+              <button className="btn btn-danger btn-sm" onClick={() => deleteCustomer(c.id)}>Eliminar</button>
+            </div>
           </li>
         ))}
       </ul>
 
-      <h3>Nuevo Cliente</h3>
+      <h3>{editingId ? 'Editar Cliente' : 'Nuevo Cliente'}</h3>
       <form onSubmit={handleSubmit} className="row g-3">
         <div className="col-md-4">
           <input
@@ -74,7 +97,9 @@ function CustomerPage() {
           </select>
         </div>
         <div className="col-md-1">
-          <button type="submit" className="btn btn-primary w-100">Agregar</button>
+          <button type="submit" className="btn btn-primary w-100">
+            {editingId ? 'Actualizar' : 'Agregar'}
+          </button>
         </div>
       </form>
     </div>
