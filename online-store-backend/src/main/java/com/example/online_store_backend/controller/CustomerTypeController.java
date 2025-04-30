@@ -2,6 +2,8 @@ package com.example.online_store_backend.controller;
 
 import com.example.online_store_backend.dto.CustomerTypeDto;
 import com.example.online_store_backend.service.CustomerTypeService;
+
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -26,14 +28,14 @@ public class CustomerTypeController {
     }
 
     @PostMapping
-    public ResponseEntity<CustomerTypeDto> createCustomerType(@RequestBody CustomerTypeDto customerTypeDto) {
+    public ResponseEntity<CustomerTypeDto> createCustomerType(@Valid @RequestBody CustomerTypeDto customerTypeDto) {
         return ResponseEntity.ok(customerTypeService.createCustomerType(customerTypeDto));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<CustomerTypeDto> updateCustomerType(
             @PathVariable Long id,
-            @RequestBody CustomerTypeDto customerTypeDto) {
+            @Valid @RequestBody CustomerTypeDto customerTypeDto) {
         return ResponseEntity.ok(customerTypeService.updateCustomerType(id, customerTypeDto));
     }
 

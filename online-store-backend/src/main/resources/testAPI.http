@@ -1,5 +1,24 @@
 ### GET
-GET http://localhost:8080/api/
+GET http://localhost:8080/api/customers
+
+### GET 
+GET http://localhost:8080/api/customer-types
 
 ### POST
-POST http://localhost:8080/api/products
+POST http://localhost:8080/api/customers
+Content-Type: application/json
+
+{
+    "name": "",
+    "email": "",
+    "customerTypeId": 4
+}
+
+### POST
+POST http://localhost:8080/api/customer-types
+Content-Type: application/json
+
+{
+    "customerTypeName": " ",
+    "customerDescription": " "
+}
