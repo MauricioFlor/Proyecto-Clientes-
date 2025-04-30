@@ -6,14 +6,37 @@ function CustomerPage() {
   const [types, setTypes] = useState([])
   const [form, setForm] = useState({ name: '', email: '', customerTypeId: '' })
   const [editingId, setEditingId] = useState(null)
+  const [errorMessage, setErrorMessage] = useState('') // Estado para errores generales
+  const [fieldErrors, setFieldErrors] = useState({}) // Estado para errores específicos de campos
 
   useEffect(() => {
     api.get('/customers').then(res => setCustomers(res.data))
     api.get('/customer-types').then(res => setTypes(res.data))
   }, [])
 
+  const validateForm = () => {
+    const errors = {}
+    if (!form.name.trim()) {
+      errors.name = 'El nombre no puede estar vacío.'
+    }
+    if (!form.email.trim()) {
+      errors.email = 'El email no puede estar vacío.'
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+      errors.email = 'El email no es válido.'
+    }
+    if (!form.customerTypeId) {
+      errors.customerTypeId = 'Debe seleccionar un tipo de cliente.'
+    }
+    return errors
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
+    const errors = validateForm()
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors)
+      return
+    }
     try {
       if (editingId) {
         const res = await api.put(`/customers/${editingId}`, form)
@@ -24,8 +47,11 @@ function CustomerPage() {
         setCustomers([...customers, res.data])
       }
       setForm({ name: '', email: '', customerTypeId: '' })
+      setErrorMessage('') // Limpiar el mensaje de error general
+      setFieldErrors({}) // Limpiar errores de campos
     } catch (error) {
-      console.error('Error al guardar cliente:', error)
+      const message = error.response?.data?.message || 'Error al guardar cliente'
+      setErrorMessage(message)
     }
   }
 
@@ -68,25 +94,36 @@ function CustomerPage() {
 
       <h3>{editingId ? 'Editar Cliente' : 'Nuevo Cliente'}</h3>
       <form onSubmit={handleSubmit} className="row g-3">
+        {errorMessage && ( // Mostrar mensaje de error general
+          <div className="alert alert-danger" role="alert">
+            {errorMessage}
+          </div>
+        )}
         <div className="col-md-4">
           <input
-            className="form-control"
+            className={`form-control ${fieldErrors.name ? 'is-invalid' : ''}`}
             placeholder="Nombre"
             value={form.name}
             onChange={e => setForm({ ...form, name: e.target.value })}
           />
+          {fieldErrors.name && (
+            <div className="invalid-feedback">{fieldErrors.name}</div>
+          )}
         </div>
         <div className="col-md-4">
           <input
-            className="form-control"
+            className={`form-control ${fieldErrors.email ? 'is-invalid' : ''}`}
             placeholder="Email"
             value={form.email}
             onChange={e => setForm({ ...form, email: e.target.value })}
           />
+          {fieldErrors.email && (
+            <div className="invalid-feedback">{fieldErrors.email}</div>
+          )}
         </div>
         <div className="col-md-3">
           <select
-            className="form-select"
+            className={`form-select ${fieldErrors.customerTypeId ? 'is-invalid' : ''}`}
             value={form.customerTypeId}
             onChange={e => setForm({ ...form, customerTypeId: e.target.value })}
           >
@@ -95,6 +132,9 @@ function CustomerPage() {
               <option key={t.id} value={t.id}>{t.customerTypeName}</option>
             ))}
           </select>
+          {fieldErrors.customerTypeId && (
+            <div className="invalid-feedback">{fieldErrors.customerTypeId}</div>
+          )}
         </div>
         <div className="col-md-1">
           <button type="submit" className="btn btn-primary w-100">
